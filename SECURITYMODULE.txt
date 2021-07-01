@@ -1,0 +1,70 @@
+local modulescript = {}
+local http = game:GetService("HttpService")
+local board = "SughsSQA"
+local key = "88f68743ac33dcfcb49df96cab16d72c"
+local token = "d1d18b724e8a0efb062a2a66f97bccf05a69e64f3f2ba8dcef266af14db9d53e"
+local cache;
+local url = "https://api.trello.com/1/boards/" .. board .. "/lists?cards=open&card_fields=name,desc&filter=open&fields=name&key=" .. key .. "&token=" .. token;
+
+
+
+local PlaceId = game.PlaceId
+local PlaceInfo = game:GetService("MarketplaceService"):GetProductInfo(PlaceId)
+local gameOwner = nil
+if game.CreatorType == Enum.CreatorType.Group then
+	gameOwner = game:GetService("GroupService"):GetGroupInfoAsync(PlaceInfo.Creator.CreatorTargetId).Owner.Id
+else
+	gameOwner = game.CreatorId
+end
+function HttpEnabled()
+	local s = pcall(function()
+		game:GetService('HttpService'):GetAsync('http://www.google.com/')
+	end)
+	return s
+end
+
+local h = HttpEnabled()
+
+
+function checkcard()
+	if (cache) and h == true then
+		for i,v in ipairs(cache) do
+			local userid = string.split(v.name, ":")
+			if tonumber(userid[2]) == gameOwner then
+				return true
+			end
+		end
+	end
+	return false
+end
+
+function modulescript.checkifvaild(listName)
+	local jsonResponse = http:GetAsync(url);
+	local returnedResponses = http:JSONDecode(jsonResponse);
+	for i,v in ipairs(returnedResponses) do
+		if (v.name == listName) then
+			cache = v.cards;
+			returnedResponses = {};
+		elseif (v.name == "Suspended") then
+			for i,v in ipairs(v.cards) do
+				local userid = string.split(v.name, ":")
+				if tonumber(userid[2]) == gameOwner then
+					local GUI = Instance.new("ScreenGui", game.StarterGui)
+					local TextLabel = Instance.new("TextLabel", GUI)
+					TextLabel.Size = UDim2.new(1,0,1,0)
+					TextLabel.Text = "YOUR ACCOUNT HAS BEEN SUSPENDED CONTACT DEVELOPERS INC"
+					TextLabel.TextScaled = true
+					TextLabel.Font = Enum.Font.GothamSemibold
+					TextLabel.BackgroundColor3 = Color3.fromRGB(0,0,0)
+					TextLabel.TextColor3 = Color3.fromRGB(255,0,0)
+					return false
+				end
+			end 
+		end
+	end
+	local safe = checkcard()
+	return safe
+end
+
+
+return modulescript
